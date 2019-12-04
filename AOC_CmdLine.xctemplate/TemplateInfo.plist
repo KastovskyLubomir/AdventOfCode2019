@@ -71,7 +71,7 @@
             		<key>SortOrder</key>
             		<integer>-2</integer>
 			<key>Default</key>
-			<string>AOC2018_</string>
+			<string>AOC2019_</string>
         	</dict>
         	<dict>
             		<key>Identifier</key>
