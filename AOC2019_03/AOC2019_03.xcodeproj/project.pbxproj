@@ -260,7 +260,7 @@
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build";
 				CONFIGURATION_TEMP_DIR = "$(PROJECT_DIR)/build";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -272,7 +272,7 @@
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build";
 				CONFIGURATION_TEMP_DIR = "$(PROJECT_DIR)/build";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};

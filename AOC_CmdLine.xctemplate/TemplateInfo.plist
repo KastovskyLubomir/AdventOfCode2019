@@ -8,11 +8,9 @@
 	<string>com.apple.dt.unit.aoc_cmdLine</string>
 	<key>Ancestors</key>
 	<array>
-		<!--string>com.apple.dt.unit.base</string!-->
 		<string>com.apple.dt.unit.base_DefinitionsLanguage</string>
-        	<string>com.apple.dt.unit.base_DefinitionsInfoPlist</string>
-        	<string>com.apple.dt.unit.base_ProjectSettings</string>
-        	<!--string>com.apple.dt.unit.base_Options</string!-->
+		<string>com.apple.dt.unit.base_DefinitionsInfoPlist</string>
+		<string>com.apple.dt.unit.base_ProjectSettings</string>
 		<string>com.apple.dt.unit.osxBase</string>
 	</array>
 	<key>Concrete</key>
@@ -54,37 +52,37 @@
 	<key>Options</key>
 	<array>
 		<dict>
-            		<key>Identifier</key>
-            		<string>productName</string>
-            		<key>Required</key>
-            		<true/>
-            		<key>Name</key>
-            		<string>Product Name:</string>
-            		<key>NotPersisted</key>
-            		<true/>
-            		<key>Description</key>
-            		<string>Your new product&apos;s name</string>
-            		<key>EmptyReplacement</key>
-            		<string>ProductName</string>
-            		<key>Type</key>
-            		<string>text</string>
-            		<key>SortOrder</key>
-            		<integer>-2</integer>
+			<key>Identifier</key>
+			<string>productName</string>
+			<key>Required</key>
+			<true/>
+			<key>Name</key>
+			<string>Product Name:</string>
+			<key>NotPersisted</key>
+			<true/>
+			<key>Description</key>
+			<string>Your new product&apos;s name</string>
+			<key>EmptyReplacement</key>
+			<string>ProductName</string>
+			<key>Type</key>
+			<string>text</string>
+			<key>SortOrder</key>
+			<integer>-2</integer>
 			<key>Default</key>
 			<string>AOC2019_</string>
-        	</dict>
-        	<dict>
-            		<key>Identifier</key>
-            		<string>organizationName</string>
-            		<key>Name</key>
-            		<string>Organization Name:</string>
-            		<key>Description</key>
-            		<string>Your company&apos;s name</string>
-            		<key>Type</key>
-            		<string>text</string>
-            		<key>Default</key>
-            		<string>___FULLUSERNAME___</string>
-        	</dict>
+		</dict>
+		<dict>
+			<key>Identifier</key>
+			<string>organizationName</string>
+			<key>Name</key>
+			<string>Organization Name:</string>
+			<key>Description</key>
+			<string>Your company&apos;s name</string>
+			<key>Type</key>
+			<string>text</string>
+			<key>Default</key>
+			<string>___FULLUSERNAME___</string>
+		</dict>
 		<dict>
 			<key>Identifier</key>
 			<string>languageChoice</string>
@@ -128,7 +126,7 @@
 							<key>SharedSettings</key>
 							<dict>
 								<key>SWIFT_VERSION</key>
-								<string>4.2</string>
+								<string>5</string>
 								<key>BUILT_PRODUCTS_DIR</key>
 								<string>$(PROJECT_DIR)/build</string>
 								<key>CONFIGURATION_BUILD_DIR</key>
