@@ -142,3 +142,86 @@ func closestIntersectionDistance(wireLines1: Array<Line>, wireLines2: Array<Line
 
 print("1. ", closestIntersectionDistance(wireLines1: wire1Lines, wireLines2: wire2Lines))
 
+
+// find intersections and measure their distances
+func allIntersections(wireLines1: Array<Line>, wireLines2: Array<Line>) -> Array<Point> {
+	var intersections: [Point] = []
+	for i in 0..<wireLines1.count {
+        let line1 = wireLines1[i]
+        for j in 0..<wireLines2.count {
+            let line2 = wireLines2[j]
+            if hasIntersection(line1: line1, line2: line2) {
+                if let intersection = intersectingPoint(line1: line1, line2: line2) {
+                    if !(intersection.x == 0 && intersection.y == 0) {
+						intersections.append(intersection)
+                    }
+                }
+            }
+		}
+	}
+	return intersections
+}
+
+func measurePathForPointInWire(wirePath: [String], point: Point) -> Int {
+	var wireLength = 0
+	var x = 0
+	var y = 0
+	for step in wirePath {
+		let len = length(step: step)
+		let dir = direction(step: step)
+		if dir == .Up {
+			for _ in 0..<len {
+				wireLength += 1
+				y += 1
+				if point.x == x && point.y == y {
+					return wireLength
+				}
+			}
+		}
+		if dir == .Down {
+			for _ in 0..<len {
+				wireLength += 1
+				y -= 1
+				if point.x == x && point.y == y {
+					return wireLength
+				}
+			}
+		}
+		if dir == .Right {
+			for _ in 0..<len {
+				wireLength += 1
+				x += 1
+				if point.x == x && point.y == y {
+					return wireLength
+				}
+			}
+		}
+		if dir == .Left {
+			for _ in 0..<len {
+				wireLength += 1
+				x -= 1
+				if point.x == x && point.y == y {
+					return wireLength
+				}
+			}
+		}
+	}
+	return 0
+}
+
+let intersections = allIntersections(wireLines1: wire1Lines, wireLines2: wire2Lines)
+
+func shortestPathToIntersection(intersections: [Point], wire1Path: [String], wire2Path: [String]) -> Int {
+	var resultDist = Int.max
+	for inter in intersections {
+		let first = measurePathForPointInWire(wirePath: wire1Path, point: inter)
+		let second = measurePathForPointInWire(wirePath: wire2Path, point: inter)
+		let distance = first + second
+		if distance < resultDist {
+			resultDist = distance
+		}
+	}
+	return resultDist
+}
+
+print("2. ", shortestPathToIntersection(intersections: intersections, wire1Path: wirePath1, wire2Path: wirePath2))
