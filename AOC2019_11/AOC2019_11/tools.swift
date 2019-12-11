@@ -41,6 +41,6 @@ func getStringBytes(str:String) -> Array<UInt8> {
 
 let fileManager = FileManager.default
 let fileDir: String = fileManager.currentDirectoryPath
-let filePath: String = fileDir.appending("/../input4.txt")
+let filePath: String = fileDir.appending("/../input.txt")
 let data = fileManager.contents(atPath: filePath)
 let inputString: String = String(data: data!, encoding: String.Encoding.utf8)!

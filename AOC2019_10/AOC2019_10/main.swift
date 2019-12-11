@@ -60,12 +60,7 @@ func printMap(map: [[Point]]) {
 		print(str)
 	}
 }
-/*			|
-	   III.	|   IV.
-		----------
-	   II.	|	I.
-			|
-*/
+
 // start is the asteroid from which I look
 // end is where I look
 func asteroidsInLine(map: [[Point]], start: Point, end: Point) -> Set<Point> {
@@ -217,11 +212,11 @@ func findBestAsteroid(map: [[Point]]) -> (Point?, Int) {
 	return (bestAsteroid, bestCount)
 }
 
-print(countVisibleAsteroids(map: map, asteroid: map[4][3]))
-let bestAsteroid = findBestAsteroid(map: map)
-print("1. ", bestAsteroid.1)
+//print(countVisibleAsteroids(map: map, asteroid: map[4][3]))
+//let bestAsteroid = findBestAsteroid(map: map)
+//print("1. ", bestAsteroid.1)
 
-let station = bestAsteroid.0!
+//let station = bestAsteroid.0!
 
 func vaporize(space: [[Point]], station: Point, nthToBeVaporized: Int) -> Point? {
 	var limit = 0
@@ -291,20 +286,73 @@ func prepareOrdered(map: [[Point]], station: Point) -> [Int: Set<Point>] {
 	return result
 }
 
-let dict = prepareOrdered(map: map, station: station)
+/* my own quadrant numbering
+                -y
+                |
+         IV.    |    I.
+       -x ------------- +x
+        III.    |   II.
+                |
+                +y
+*/
+//
+func vectorsQuadrant(vx: Double, vy: Double) -> Int {
+    if vx >= 0 && vy < 0 {
+        return 1
+    }
+    if vx > 0 && vy >= 0 {
+        return 2
+    }
+    if vx <= 0 && vy > 0 {
+        return 3
+    }
+    if vx < 0 && vy <= 0 {
+        return 4
+    }
+    return -1
+}
 
 // 0 equal
 // 1 first lower
 // 2 second lower
 func compare(a: Point, b: Point, start: Point) -> Int {
-
-	let vax = start.x - a.x
-	let vay = start.y - a.y
-	let vbx = start.x - b.x
-	let vby = start.y - b.y
-
-	if vax > 0
-
+	let vax = a.x - start.x
+    let vay = a.y - start.y
+    let vbx = b.x - start.x
+    let vby = b.y - start.y
+    let aquadrant = vectorsQuadrant(vx: vax, vy: vay)
+    let bquadrant = vectorsQuadrant(vx: vbx, vy: vby)
+    if aquadrant < bquadrant {
+        return 1
+    } else if aquadrant > bquadrant {
+        return 2
+    } else {
+        // same quadrant
+        var aa = 0.0
+        var bb = 0.0
+        switch aquadrant {
+        case 1:
+            aa = vax/abs(vay)
+            bb = vbx/abs(vby)
+        case 2:
+            aa = vay/vax
+            bb = vby/vbx
+        case 3:
+            aa = abs(vax)/vay
+            bb = abs(vbx)/vby
+        case 4:
+            aa = abs(vay)/abs(vax)
+            bb = abs(vby)/abs(vbx)
+        default: return -1
+        }
+        if aa < bb {
+            return 1
+        } else if aa > bb {
+            return 2
+        } else {
+            return 0
+        }
+    }
 }
 
 func order(asteroids: [Int: Set<Point>], station: Point) -> [Set<Point>] {
@@ -315,19 +363,30 @@ func order(asteroids: [Int: Set<Point>], station: Point) -> [Set<Point>] {
 	}
 
 	result.sort { first, second in
-		let firstNearest = findNearestAsteroid(asteroids: first, myPosition: station)
-		let secondNearest = findNearestAsteroid(asteroids: first, myPosition: station)
-		if firstNearest != nil && secondNearest != nil {
-
-		}
+		if let firstNearest = findNearestAsteroid(asteroids: first, myPosition: station),
+            let secondNearest = findNearestAsteroid(asteroids: first, myPosition: station) {
+                return compare(a: firstNearest, b: secondNearest, start: station) == 1
+        }
+        return false
 	}
 
 	return result
 }
-
+/*
 for key in dict.keys {
 	print("count: ",dict[key]?.count, " > ", dict[key])
 }
+*/
+
+let station = Point(isAsteroid: true, x: 3, y: 3, isVisible: true, checked: false)
+let dict = prepareOrdered(map: map, station: station)
+print(station)
+let ordered = order(asteroids: dict, station: station)
+
+for x in ordered {
+    print("count: ",x.count, " > ", x)
+}
+
 /*
 if let vaporized = vaporize(space: map, station: station, nthToBeVaporized: 200) {
 	print("2. ", Int(vaporized.x * 100 + vaporized.y))
