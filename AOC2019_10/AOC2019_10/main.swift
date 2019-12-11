@@ -10,8 +10,8 @@ import Foundation
 
 struct Point: Hashable {
     var isAsteroid: Bool
-    var x: Double
-    var y: Double
+    var x: Int
+    var y: Int
 	var isVisible: Bool
 	var checked: Bool
 
@@ -25,8 +25,6 @@ struct Point: Hashable {
     }
 }
 
-let input = readLinesRemoveEmpty(str: inputString)
-
 func createMap(input: [String]) -> [[Point]] {
     var result: [[Point]] = []
     var y = 0
@@ -35,9 +33,9 @@ func createMap(input: [String]) -> [[Point]] {
         var row: [Point] = []
         for c in line {
             if c == Character(".") {
-				row.append(Point(isAsteroid: false, x: Double(x), y: Double(y), isVisible: true, checked: false))
+				row.append(Point(isAsteroid: false, x: x, y: y, isVisible: true, checked: false))
             } else {
-                row.append(Point(isAsteroid: true, x: Double(x), y: Double(y), isVisible: true, checked: false))
+                row.append(Point(isAsteroid: true, x: x, y: y, isVisible: true, checked: false))
             }
             x += 1
         }
@@ -65,36 +63,9 @@ func printMap(map: [[Point]]) {
 // end is where I look
 func asteroidsInLine(map: [[Point]], start: Point, end: Point) -> Set<Point> {
     var resultPoints: Set<Point> = []
-
     // create line equation
     let vectorx = end.x - start.x
     let vectory = end.y - start.y
-/*
-	if vectorx >= 0 { // 1. and 4. quadrant
-		// go from starting position of x and increase to bounds
-		for x in Int(start.x)..<map[0].count {
-			let t = (Double(x) - start.x)/vectorx
-			let y = start.y + (t * vectory)
-			if trunc(y) == y && Int(y) < map.count && Int(y) >= 0 {	// y is whole number
-				let point = map[Int(y)][x]
-				if point.isAsteroid {
-					resultPoints.append(point)
-				}
-			}
-		}
-	} else if vectorx < 0 { // 2. and 3. quadrant
-		for x in stride(from: Int(start.x-1), to: -1, by: -1) {
-			let t = (Double(x) - start.x)/vectorx
-			let y = start.y + (t * vectory)
-			if trunc(y) == y && Int(y) < map.count && Int(y) >= 0 {	// y is whole number
-				let point = map[Int(y)][x]
-				if point.isAsteroid {
-					resultPoints.append(point)
-				}
-			}
-		}
-	}
-*/
 	var xstride: StrideTo<Int>!
 	var ystride: StrideTo<Int>!
 	if vectorx >= 0 {
@@ -110,10 +81,11 @@ func asteroidsInLine(map: [[Point]], start: Point, end: Point) -> Set<Point> {
 
 	if vectorx != 0 {
 		for x in xstride {
-			let t = (Double(x) - start.x)/vectorx
-			let y = start.y + (t * vectory)
-			if trunc(y) == y && Int(y) < map.count && Int(y) >= 0 {	// y is whole number
-				let point = map[Int(y)][x]
+			let t = Double(x - start.x)/Double(vectorx)
+			let y = Double(start.y) + (t * Double(vectory))
+			let inty = Int(y)
+			if trunc(y) == y && inty < map.count && inty >= 0 {	// y is whole number
+				let point = map[inty][x]
 				if point.isAsteroid {
 					resultPoints.insert(point)
 				}
@@ -123,10 +95,11 @@ func asteroidsInLine(map: [[Point]], start: Point, end: Point) -> Set<Point> {
 
 	if vectory != 0 {
 		for y in ystride {
-			let t = (Double(y) - start.y)/vectory
-			let x = start.x + (t * vectorx)
-			if trunc(x) == x && Int(x) < map[0].count && Int(x) >= 0 {	// x is whole number
-				let point = map[y][Int(x)]
+			let t = Double(y - start.y)/Double(vectory)
+			let x = Double(start.x) + (t * Double(vectorx))
+			let intx = Int(x)
+			if trunc(x) == x && intx < map[0].count && intx >= 0 {	// x is whole number
+				let point = map[y][intx]
 				if point.isAsteroid {
 					resultPoints.insert(point)
 				}
@@ -155,44 +128,28 @@ func countVisibleAsteroids(map:[[Point]], asteroid: Point) -> Int {
 	var localMap = map
 	for y in 0..<localMap.count {
 		for x in 0..<localMap[0].count {
-			if !(Int(asteroid.x) == x && Int(asteroid.y) == y) {
+			if !(asteroid.x == x && asteroid.y == y) {
 				let asteroids = asteroidsInLine(map: localMap, start: asteroid, end: localMap[y][x])
-				//print("to x: ", x, ", y: ", y, ">", asteroids)
 				if let nearest = findNearestAsteroid(asteroids: asteroids, myPosition: asteroid) {
-					//print(nearest)
 					for ast in asteroids {
 						if !(ast.x == nearest.x && ast.y == nearest.y) {
-							localMap[Int(ast.y)][Int(ast.x)].checked = true
-							localMap[Int(ast.y)][Int(ast.x)].isVisible = false
+							localMap[ast.y][ast.x].isVisible = false
 						}
 					}
 				}
 			}
 		}
 	}
-
 	for y in 0..<localMap.count {
 		for x in 0..<localMap[0].count {
 			if localMap[y][x].isVisible && localMap[y][x].isAsteroid &&
-				!(Int(asteroid.x) == x && Int(asteroid.y) == y) {
+				!(asteroid.x == x && asteroid.y == y) {
 				count += 1
 			}
 		}
 	}
-
-	//print(count)
-	//print(localMap)
-	//print("---------------")
 	return count
-
 }
-
-let map = createMap(input: input)
-
-printMap(map: map)
-//print(asteroidsInLine(map: map, start: map[0][4], end: map[4][4]))
-//let line = asteroidsInLine(map: map, start: map[9][9], end: map[8][8])
-//print(findNearestAsteroid(asteroids: line, myPosition: map[0][0]))
 
 func findBestAsteroid(map: [[Point]]) -> (Point?, Int) {
 	var bestCount = 0
@@ -208,72 +165,17 @@ func findBestAsteroid(map: [[Point]]) -> (Point?, Int) {
 			}
 		}
 	}
-
 	return (bestAsteroid, bestCount)
 }
 
-//print(countVisibleAsteroids(map: map, asteroid: map[4][3]))
-//let bestAsteroid = findBestAsteroid(map: map)
-//print("1. ", bestAsteroid.1)
-
-//let station = bestAsteroid.0!
-
-func vaporize(space: [[Point]], station: Point, nthToBeVaporized: Int) -> Point? {
-	var limit = 0
-	var vaporizeCounter = 0
-	var map = space
-	let rotationSteps = (map.count + map[0].count) * 2
-	var x = Int(station.x)
-	var y = 0
-	var xIncrement = 1
-	var yIncrement = 0
-	while true {
-		for _ in 0..<rotationSteps {
-			if (x == map[0].count - 1) && ( y == 0){
-				xIncrement = 0
-				yIncrement = 1
-			}
-			if (x == map[0].count - 1) && (y == map.count - 1) {
-				xIncrement = -1
-				yIncrement = 0
-			}
-			if (x == 0) && (y == map.count - 1){
-				xIncrement = 0
-				yIncrement = -1
-			}
-			if (x == 0) && (y == 0) {
-				xIncrement = 1
-				yIncrement = 0
-			}
-
-			let line = asteroidsInLine(map: map, start: station, end: map[y][x])
-			if let nearest = findNearestAsteroid(asteroids: line, myPosition: station) {
-				// vaporize
-				vaporizeCounter += 1
-				map[Int(nearest.y)][Int(nearest.x)].isAsteroid = false
-				if vaporizeCounter == nthToBeVaporized {
-					return nearest
-				}
-			}
-			x += xIncrement
-			y += yIncrement
-		}
-		limit += 1
-		if limit > 100000 {
-			break
-		}
-	}
-	return nil
-}
-
-func prepareOrdered(map: [[Point]], station: Point) -> [Int: Set<Point>] {
+func prepareAsteroidsInLine(map: [[Point]], station: Point) -> [Int: Set<Point>] {
 	var result: [Int: Set<Point>] = [:]
 	for y in 0..<map.count {
 		for x in 0..<map[0].count {
 			if map[y][x].isAsteroid {
 				let line = asteroidsInLine(map: map, start: station, end: map[y][x])
 				if let nearest = findNearestAsteroid(asteroids: line, myPosition: station) {
-					let key = Int(nearest.y * 1000 + nearest.x)
+					let key = nearest.y * 1000 + nearest.x
 					if result[key] == nil {
 						result[key] = line
 					} else {
@@ -296,7 +198,7 @@ func prepareOrdered(map: [[Point]], station: Point) -> [Int: Set<Point>] {
                 +y
 */
 //
-func vectorsQuadrant(vx: Double, vy: Double) -> Int {
+func vectorsQuadrant(vx: Int, vy: Int) -> Int {
     if vx >= 0 && vy < 0 {
         return 1
     }
@@ -332,17 +234,17 @@ func compare(a: Point, b: Point, start: Point) -> Int {
         var bb = 0.0
         switch aquadrant {
         case 1:
-            aa = vax/abs(vay)
-            bb = vbx/abs(vby)
+            aa = Double(vax)/Double(abs(vay))
+            bb = Double(vbx)/Double(abs(vby))
         case 2:
-            aa = vay/vax
-            bb = vby/vbx
+            aa = Double(vay)/Double(vax)
+            bb = Double(vby)/Double(vbx)
         case 3:
-            aa = abs(vax)/vay
-            bb = abs(vbx)/vby
+            aa = Double(abs(vax))/Double(vay)
+            bb = Double(abs(vbx))/Double(vby)
         case 4:
-            aa = abs(vay)/abs(vax)
-            bb = abs(vby)/abs(vbx)
+            aa = Double(abs(vay))/Double(abs(vax))
+            bb = Double(abs(vby))/Double(abs(vbx))
         default: return -1
         }
         if aa < bb {
@@ -357,40 +259,73 @@ func compare(a: Point, b: Point, start: Point) -> Int {
 
 func order(asteroids: [Int: Set<Point>], station: Point) -> [Set<Point>] {
 	var result: [Set<Point>] = []
-
 	for key in asteroids.keys {
 		result.append(asteroids[key]!)
 	}
-
 	result.sort { first, second in
 		if let firstNearest = findNearestAsteroid(asteroids: first, myPosition: station),
-            let secondNearest = findNearestAsteroid(asteroids: first, myPosition: station) {
+            let secondNearest = findNearestAsteroid(asteroids: second, myPosition: station) {
                 return compare(a: firstNearest, b: secondNearest, start: station) == 1
         }
         return false
 	}
-
 	return result
 }
-/*
-for key in dict.keys {
-	print("count: ",dict[key]?.count, " > ", dict[key])
+
+func vaporize(map: [[Point]], station: Point, nthToBeVaporized: Int) -> Point? {
+	var limit = 0
+	var vaporizeCounter = 0
+	let asteroidLines = prepareAsteroidsInLine(map: map, station: station)
+	var orderedAsteroidLines = order(asteroids: asteroidLines, station: station)
+	var index = 0
+	while true {
+		if !orderedAsteroidLines[index].isEmpty {
+			if let nearest = findNearestAsteroid(asteroids: orderedAsteroidLines[index], myPosition: station) {
+				orderedAsteroidLines[index].remove(nearest)
+				vaporizeCounter += 1
+				if vaporizeCounter == nthToBeVaporized {
+					return nearest
+				}
+			}
+
+		}
+		index += 1
+		if index == orderedAsteroidLines.count {
+			index = 0
+		}
+		limit += 1
+		if limit > 10000 {
+			break
+		}
+	}
+	return nil
 }
-*/
 
-let station = Point(isAsteroid: true, x: 3, y: 3, isVisible: true, checked: false)
-let dict = prepareOrdered(map: map, station: station)
-print(station)
-let ordered = order(asteroids: dict, station: station)
+let input = readLinesRemoveEmpty(str: inputString)
+let map = createMap(input: input)
+//printMap(map: map)
 
-for x in ordered {
-    print("count: ",x.count, " > ", x)
-}
+let start = DispatchTime.now()
+let bestAsteroid = findBestAsteroid(map: map)
+let end = DispatchTime.now()
 
-/*
-if let vaporized = vaporize(space: map, station: station, nthToBeVaporized: 200) {
-	print("2. ", Int(vaporized.x * 100 + vaporized.y))
+let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds // <<<<< Difference in nano seconds (UInt64)
+let timeInterval = Double(nanoTime) / 1_000_000_000
+
+print("1. ", bestAsteroid.1, " elapsed time: ", timeInterval)
+let station = bestAsteroid.0!
+//print(station)
+
+let start2 = DispatchTime.now()
+if let vaporized = vaporize(map: map, station: station, nthToBeVaporized: 200) {
+	let end2 = DispatchTime.now()
+	let nanoTime = end2.uptimeNanoseconds - start2.uptimeNanoseconds // <<<<< Difference in nano seconds (UInt64)
+	let timeInterval = Double(nanoTime) / 1_000_000_000
+	print("2. ", Int(vaporized.x * 100 + vaporized.y), " elapsed time: ", timeInterval)
+
 } else {
-	print("failed")
+	let end2 = DispatchTime.now()
+	let nanoTime = end2.uptimeNanoseconds - start2.uptimeNanoseconds // <<<<< Difference in nano seconds (UInt64)
+	let timeInterval = Double(nanoTime) / 1_000_000_000
+	print("failed,", " elapsed time: ", timeInterval)
 }
-*/
