@@ -293,6 +293,38 @@ func prepareOrdered(map: [[Point]], station: Point) -> [Int: Set<Point>] {
 
 let dict = prepareOrdered(map: map, station: station)
 
+// 0 equal
+// 1 first lower
+// 2 second lower
+func compare(a: Point, b: Point, start: Point) -> Int {
+
+	let vax = start.x - a.x
+	let vay = start.y - a.y
+	let vbx = start.x - b.x
+	let vby = start.y - b.y
+
+	if vax > 0
+
+}
+
+func order(asteroids: [Int: Set<Point>], station: Point) -> [Set<Point>] {
+	var result: [Set<Point>] = []
+
+	for key in asteroids.keys {
+		result.append(asteroids[key]!)
+	}
+
+	result.sort { first, second in
+		let firstNearest = findNearestAsteroid(asteroids: first, myPosition: station)
+		let secondNearest = findNearestAsteroid(asteroids: first, myPosition: station)
+		if firstNearest != nil && secondNearest != nil {
+
+		}
+	}
+
+	return result
+}
+
 for key in dict.keys {
 	print("count: ",dict[key]?.count, " > ", dict[key])
 }
