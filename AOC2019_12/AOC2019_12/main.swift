@@ -19,22 +19,23 @@ let input = readLinesRemoveEmpty(str: inputString)
 
 
 struct Planet: Hashable {
-    var x: Int
-    var y: Int
-	var z: Int
-
-	var velx: Int
-	var vely: Int
-	var velz: Int
+    var pos: [Int]
+	var vel: [Int]
 
     static func == (lhs: Planet, rhs: Planet) -> Bool {
-		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
+		for i in 0..<lhs.pos.count {
+			if lhs.pos[i] != rhs.pos[i] || lhs.vel[i] != rhs.vel[i] {
+				return false
+			}
+		}
+		return true
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
-		hasher.combine(z)
+		for i in 0..<pos.count {
+			hasher.combine(pos[i])
+			hasher.combine(vel[i])
+		}
     }
 }
 
@@ -42,7 +43,7 @@ func loadPlanets(positions: [String]) -> [Planet] {
 	return positions.map { pos in
 		let parts = pos.components(separatedBy: ["<","=",","," ", ">"])
 		print(parts)
-		return Planet(x: Int(parts[2])!, y: Int(parts[5])!, z: Int(parts[8])!, velx: 0, vely: 0, velz: 0)
+		return Planet(pos:[Int(parts[2])!, Int(parts[5])!, Int(parts[8])!], vel: [0,0,0])
 	}
 }
 
@@ -50,21 +51,13 @@ func updateVelocity(planets: inout [Planet]) {
     for i in 0..<planets.count {
         for j in 0..<planets.count {
             if i != j {
-                if planets[i].x < planets[j].x {
-                    planets[i].velx += 1
-                } else if planets[i].x > planets[j].x {
-                    planets[i].velx -= 1
-                }
-                if planets[i].y < planets[j].y {
-                    planets[i].vely += 1
-                } else if planets[i].y > planets[j].y {
-                    planets[i].vely -= 1
-                }
-                if planets[i].z < planets[j].z {
-                    planets[i].velz += 1
-                } else if planets[i].z > planets[j].z {
-                    planets[i].velz -= 1
-                }
+				for k in 0..<planets[i].pos.count {
+					if planets[i].pos[k] < planets[j].pos[k] {
+						planets[i].vel[k] += 1
+					} else if planets[i].pos[k] > planets[j].pos[k] {
+						planets[i].vel[k] -= 1
+					}
+				}
             }
         }
 	}
@@ -72,17 +65,21 @@ func updateVelocity(planets: inout [Planet]) {
 
 func updatePosition(planets: inout [Planet]) {
     for i in 0..<planets.count {
-        planets[i].x += planets[i].velx
-        planets[i].y += planets[i].vely
-        planets[i].z += planets[i].velz
+		for j in 0..<planets[i].pos.count {
+			planets[i].pos[j] += planets[i].vel[j]
+		}
     }
 }
 
 func totalEnergy(planets: [Planet]) -> Int {
     var total = 0
     for i in 0..<planets.count {
-        let potential = abs(planets[i].x) + abs(planets[i].y) + abs(planets[i].z)
-        let kinetic = abs(planets[i].velx) + abs(planets[i].vely) + abs(planets[i].velz)
+		var potential = 0
+		var kinetic = 0
+		for j in 0..<planets[i].pos.count {
+			potential += abs(planets[i].pos[j])
+			kinetic += abs(planets[i].vel[j])
+		}
         total += (potential * kinetic)
     }
     return total
@@ -90,7 +87,7 @@ func totalEnergy(planets: [Planet]) -> Int {
 
 func runSimulation(planets: [Planet], cycles: Int) -> Int {
     var moons = planets
-    for i in 0..<cycles {
+    for _ in 0..<cycles {
         updateVelocity(planets: &moons)
         updatePosition(planets: &moons)
     }
@@ -98,31 +95,46 @@ func runSimulation(planets: [Planet], cycles: Int) -> Int {
     return totalEnergy(planets: moons)
 }
 
-let planets = loadPlanets(positions: input)
-print(runSimulation(planets: planets, cycles: 1000))
-
-func planetsSame(a: Planet, b: Planet) -> Bool {
-    return a.x == b.x && a.y == b.y && a.z == b.z && a.velx == b.velx && a.vely == b.vely && a.velz == b.velz
+func getHashFromAxes(axe: Int, planets: [Planet]) -> String {
+	var pos = ""
+	var vel = "*"
+	for i in 0..<planets.count {
+		pos += "|" + String(planets[i].pos[axe])
+		vel += "|" + String(planets[i].vel[axe])
+	}
+	return pos + vel
 }
 
-func PlanetToString(planet: Planet) -> String {
-    let position = String(planet.x) + "," + String(planet.y) + "," + String(planet.z)
-    let velocity = "," + String(planet.velx) + "," + String(planet.vely) + "," + String(planet.velz)
-    return position + velocity
-}
-
-func runSimulation1(planets: [Planet], cycles: Int) -> Int {
+func runSimulationInAxes(planets: [Planet], axes: Int, cycles: Int) -> Int {
     var moons = planets
-    let first = planets[0]
-    var states: Set<String> = []
     var counter = 0
-    while true {
+	var setOfPositions: [String: Int] = [:]
+	while counter < cycles {
         updateVelocity(planets: &moons)
         updatePosition(planets: &moons)
-        counter += 1
-        states.insert()
+		counter += 1
+		let hash = getHashFromAxes(axe: axes, planets: moons)
+		if let count = setOfPositions[hash] {
+			//print(hash, counter - count)
+			return counter - count
+		} else {
+			setOfPositions[hash] = counter
+		}
+		if counter == cycles {
+			break
+		}
     }
+	return -1
 }
 
-print(runSimulation1(planets: planets, cycles: 1000))
+let planets = loadPlanets(positions: input)
+print("1. ", runSimulation(planets: planets, cycles: 1000))
 
+//print(runSimulationInAxes(planets: planets, axes: 2, cycles: 10000))
+print("2. least common multiplier from: ",
+	  runSimulationInAxes(planets: planets, axes: 0, cycles: 1000000),
+	  runSimulationInAxes(planets: planets, axes: 1, cycles: 1000000),
+	  runSimulationInAxes(planets: planets, axes: 2, cycles: 1000000)
+)
+
+// compute least common multiplier from results
