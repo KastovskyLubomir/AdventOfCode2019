@@ -155,10 +155,8 @@ func drawToGrid(program: [Int: Int]) -> Grid {
 		if tile.halted {
 			break
 		}
-
 		let key = getKey(x: x.output, y: y.output)
 		grid[key] = tile.output
-
 	}
 	return grid
 }
@@ -173,6 +171,29 @@ func countTiles(type: Int, grid: Grid) -> Int {
 	return sum
 }
 
+func getCorners(grid: Grid) -> (minx: Int, miny: Int, maxx: Int, maxy: Int) {
+    var minx = 0
+    var miny = 0
+    var maxx = 0
+    var maxy = 0
+    grid.keys.forEach { key in
+        let nums = key.components(separatedBy: [","])
+        if minx > Int(nums[0])! {
+            minx = Int(nums[0])!
+        }
+        if miny > Int(nums[1])! {
+            miny = Int(nums[1])!
+        }
+        if maxx < Int(nums[0])! {
+            maxx = Int(nums[0])!
+        }
+        if maxy < Int(nums[1])! {
+            maxy = Int(nums[1])!
+        }
+    }
+    return (minx: minx, miny: miny, maxx: maxx, maxy: maxy)
+}
+
 /*
 0 is an empty tile. No game object appears in this tile.
 1 is a wall tile. Walls are indestructible barriers.
@@ -181,28 +202,10 @@ func countTiles(type: Int, grid: Grid) -> Int {
 4 is a ball tile. The ball moves diagonally and bounces off objects.
 */
 func printGrid(grid: Grid) {
-	var minx = 0
-	var miny = 0
-	var maxx = 0
-	var maxy = 0
-	grid.keys.forEach { key in
-		let nums = key.components(separatedBy: [","])
-		if minx > Int(nums[0])! {
-			minx = Int(nums[0])!
-		}
-		if miny > Int(nums[1])! {
-			miny = Int(nums[1])!
-		}
-		if maxx < Int(nums[0])! {
-			maxx = Int(nums[0])!
-		}
-		if maxy < Int(nums[1])! {
-			maxy = Int(nums[1])!
-		}
-	}
-	for y in miny...maxy {
+    let corners = getCorners(grid: grid)
+    for y in corners.miny...corners.maxy {
 		var row = ""
-		for x in minx...maxx {
+        for x in corners.minx...corners.maxx {
 			let key = getKey(x: x, y: y)
 			if let tile = grid[key] {
 				switch tile {
@@ -222,7 +225,130 @@ func printGrid(grid: Grid) {
 	}
 }
 
+func nextBallPosition(previous: Int, current: Int, minx: Int, maxx: Int) -> Int {
+    if current == (minx + 1) || previous < current {
+        return current + 1
+    } else if current == (maxx - 1) || previous > current {
+        return current - 1
+    }
+    return -1
+}
+
+func hasBallAndPaddleTypes(grid: Grid) -> Bool {
+    var ball = false
+    var paddle = false
+    for key in grid.keys {
+        if let tile = grid[key] {
+            if tile == 3 {
+                paddle = true
+            }
+            if tile == 4 {
+                ball = true
+            }
+            if ball && paddle {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+func playTheGame(program: [Int: Int]) -> Int {
+    var grid: Grid = [:]
+    var memory = program
+    memory[0] = 2
+    let corners = getCorners(grid: grid)
+    var ip = 0
+    var rbo = 0
+    var input = 0
+    var score = 0
+    var ballCurrentX: Int?
+    var ballPreviousX: Int?
+    var paddleX: Int?
+    var newPaddleX: Int?
+    var paddleY = 1
+    var ballY = 0
+    var i = 0
+    while true {
+        let x = computer(memory: &memory, ip: &ip, rbo: &rbo, input: input)
+        if x.halted {
+            break
+        }
+        let y = computer(memory: &memory, ip: &ip, rbo: &rbo, input: input)
+        if y.halted {
+            break
+        }
+        let tile = computer(memory: &memory, ip: &ip, rbo: &rbo, input: input)
+        if tile.halted {
+            break
+        }
+        if x.output == -1 && y.output == 0 {
+            score = tile.output
+            i += 1
+        } else {
+            // update grid
+            let key = getKey(x: x.output, y: y.output)
+            grid[key] = tile.output
+
+            // ball position
+            if tile.output == 4 {
+                ballY = y.output
+                if let current = ballCurrentX {
+                    ballPreviousX = current
+                }
+                ballCurrentX = x.output
+                if let current = ballCurrentX, let previous = ballPreviousX {
+                    newPaddleX = nextBallPosition(previous: previous, current: current, minx: corners.minx, maxx: corners.maxx)
+                }
+                //print("ball move, ", ballCurrentX)
+            }
+
+            // paddle position
+            if tile.output == 3 {
+                paddleX = x.output
+                paddleY = y.output
+                //print("paddle move, ", paddleX)
+            }
+
+            // move joystick
+            if let x = paddleX, let newx = newPaddleX {
+                if paddleY - 1 == ballY && paddleX == ballCurrentX {
+                    input = 0
+                } else if x < newx {
+                    input = 1
+                } else if x > newx {
+                    input = -1
+                } else {
+                    input = 0
+                }
+            }
+/*
+            if hasBallAndPaddleTypes(grid: grid) {
+                printGrid(grid: grid)
+                print(score)
+                print(input)
+                print(" ")
+            }
+ */
+        }
+
+        if paddleY == ballY {
+            break
+        }
+/*
+        if countTiles(type: 2, grid: grid) == 0 {
+            break
+        }
+ */
+    }
+    print("blocks: ", countTiles(type: 2, grid: grid))
+    printGrid(grid: grid)
+    return score
+}
+
 let memory = loadToMemory(program: program)
 let grid = drawToGrid(program: memory)
 print(countTiles(type: 2, grid: grid))
 printGrid(grid: grid)
+
+print(playTheGame(program: memory))
