@@ -2,30 +2,28 @@
 import Foundation
 
 class CircleList<Element> {
-    
     class Node<Element> {
-        
         var left: Node?
         var right: Node?
         var value: Element?
-        
+
         init(left: Node? = nil, right: Node? = nil, value: Element? = nil) {
             self.left = left
             self.right = right
             self.value = value
         }
     }
-    
+
     init() {
-        self.actual = nil
-        self.count = 0
+        actual = nil
+        count = 0
     }
-    
+
     /// Points to actual element.
     var actual: Node<Element>?
     /// Count of elemtns in list.
     var count: Int
-    
+
     /**
      Insert element on the right side of actual.
      - Parameter value: Inserted element.
@@ -43,7 +41,7 @@ class CircleList<Element> {
         }
         count += 1
     }
-    
+
     /**
      Insert element on the left side of actual.
      - Parameter value: Inserted element.
@@ -61,29 +59,29 @@ class CircleList<Element> {
         }
         count += 1
     }
-    
+
     /**
      Move actual to right shift-times. Shift is a parameter.
      - Parameter shift: Number of elements to move the actual pointer to the right.
      */
     public func moveToRight(shift: Int) {
         guard actual != nil else { return }
-        for _ in 0..<shift {
+        for _ in 0 ..< shift {
             actual = actual?.right
         }
     }
-    
+
     /**
      Move actual to left shift-times. Shift is a parameter.
      - Parameter shift: Number of elements to move the actual pointer to the left.
      */
     public func moveToLeft(shift: Int) {
         guard actual != nil else { return }
-        for _ in 0..<shift {
+        for _ in 0 ..< shift {
             actual = actual!.left
         }
     }
-    
+
     /**
      Remove actual, new actual becomes the element which was on right side of removed actual Element.
      */
@@ -104,5 +102,3 @@ class CircleList<Element> {
         count -= 1
     }
 }
-
-

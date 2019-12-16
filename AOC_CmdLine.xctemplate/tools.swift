@@ -1,7 +1,7 @@
 
 import Foundation
 
-func readLinesRemoveEmpty(str: String) -> Array<String> {
+func readLinesRemoveEmpty(str: String) -> [String] {
     var x = str.components(separatedBy: ["\n"])
     for i in x.indices {
         if x[i].isEmpty {
@@ -12,11 +12,11 @@ func readLinesRemoveEmpty(str: String) -> Array<String> {
 }
 
 // input: "Jack,Bob,Frank"
-func stringWordArrayToArrayOfWords(input:String, separators: CharacterSet) -> Array<String> {
+func stringWordArrayToArrayOfWords(input: String, separators: CharacterSet) -> [String] {
     var result = [String]()
     let lenArrStr = input.components(separatedBy: separators)
     for s in lenArrStr {
-        if(!s.isEmpty) {
+        if !s.isEmpty {
             result.append(s)
         }
     }
@@ -24,17 +24,17 @@ func stringWordArrayToArrayOfWords(input:String, separators: CharacterSet) -> Ar
 }
 
 // input: "1,2,3,4,5"
-func stringNumArrayToArrayOfInt(input:String, separators: CharacterSet) -> Array<Int> {
+func stringNumArrayToArrayOfInt(input: String, separators: CharacterSet) -> [Int] {
     let strArray = input.components(separatedBy: separators)
     return strArray.compactMap { Int($0) }
 }
 
 // input: "1","2","3"
-func strArrayToIntArray(strArray: Array<String>) -> Array<Int> {
+func strArrayToIntArray(strArray: [String]) -> [Int] {
     return strArray.compactMap { Int($0) }
 }
 
-func getStringBytes(str:String) -> Array<UInt8> {
+func getStringBytes(str: String) -> [UInt8] {
     let buf1 = [UInt8](str.utf8)
     return buf1
 }
