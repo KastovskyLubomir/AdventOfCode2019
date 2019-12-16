@@ -135,6 +135,7 @@ class LinkedList<Element:Equatable>:Equatable {
         actual!.left!.right = actual!.right
         actual!.right!.left = actual!.left
         actual = actual!.right
+		count -= 1
     }
     
     public func removeLast() {

@@ -10,23 +10,36 @@ import Foundation
 
 //print(input)
 
-struct Chemical: Equatable {
+struct Chemical: Hashable {
     var name: String
     var amount: Int
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.name == rhs.name && lhs.amount == rhs.amount
+        return lhs.name == rhs.name
+    }
+
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(name)
     }
 }
 
-typealias ChemicalList = LinkedList<Chemical>
+typealias ChemicalSet = Set<Chemical>
 
 struct Reaction {
     var output: Chemical
-    var input: ChemicalList
+    var input: ChemicalSet
 }
 
 typealias ReactionList = [Reaction]
+
+func insertToSet(chemical: Chemical, set: inout ChemicalSet) {
+	if let chem = set.first(where: { $0.name == chemical.name }) {
+		set.remove(chem)
+		set.insert(Chemical(name: chemical.name, amount: chemical.amount + chem.amount))
+	} else {
+		set.insert(chemical)
+	}
+}
 
 func parseInput(input: [String]) -> ReactionList {
     var result: ReactionList = ReactionList()
@@ -36,10 +49,10 @@ func parseInput(input: [String]) -> ReactionList {
         let outputChem = parts[2].components(separatedBy: [" "])
 
         var index = 0
-        let inChems: ChemicalList = ChemicalList()
+        var inChems: ChemicalSet = ChemicalSet()
         while index < inputChems.count {
             let chem = Chemical(name: inputChems[index+1], amount: Int(inputChems[index])!)
-            inChems.appendLast(value: chem)
+            insertToSet(chemical: chem, set: &inChems)
             index += 3
         }
         result.append(
@@ -52,74 +65,40 @@ func parseInput(input: [String]) -> ReactionList {
     return result
 }
 
-//print(parseInput(input: input))
-
 func chemicalToString(_ chem: Chemical) -> String {
     return "[" + chem.name + ", " + String(chem.amount) + "]"
 }
 
-func chemicalListToString(_ chems: ChemicalList) -> String {
-    guard chems.count != 0 else {
+func chemicalListToString(_ chems: ChemicalSet) -> String {
+    guard !chems.isEmpty else {
         return "{ }"
     }
     var result = ""
-    chems.actualToFirst()
-    for _ in 0..<chems.count {
+    for chem in chems {
         if result.isEmpty {
             result += "{ "
         } else {
             result += ", "
         }
-        result += chemicalToString(chems.actual!.value!)
-        chems.moveToRight(shift: 1)
+        result += chemicalToString(chem)
     }
     result += " }"
     return result
 }
 
 func hasOnlyInputChem(inputChem: String, reaction: Reaction) -> Bool {
-    reaction.input.actualToFirst()
-    for _ in 0..<reaction.input.count {
-        if inputChem != reaction.input.actual!.value!.name {
-            return false
-        }
+	return reaction.input.allSatisfy {
+		inputChem == $0.name
     }
-    return true
 }
 
-func replacementFor(chemical: Chemical, reactions: ReactionList) -> (amountOfReplacedProduced: Int, ChemicalList) {
+func replacementFor(chemical: Chemical, reactions: ReactionList) -> (amountOfReplacedProduced: Int, ChemicalSet) {
     for reaction in reactions {
         if reaction.output.name == chemical.name {
             return (reaction.output.amount, reaction.input)
         }
     }
-    return (amountOfReplacedProduced: 0, ChemicalList())
-}
-
-func combineSameChemicals(chemicals: ChemicalList) -> ChemicalList {
-    let chems = chemicals
-    chems.actualToFirst()
-    let result: ChemicalList = ChemicalList()
-    let i = 0
-    while i < chems.count {
-        var chem = chems.actual!.value!
-        chems.removeActual()
-        chems.actualToFirst()
-        var j = 0
-        while j < chems.count {
-            if chems.actual!.value!.name == chem.name {
-                chem.amount += chems.actual!.value!.amount
-                chems.removeActual()
-                chems.actualToFirst()
-                j = 0
-            } else {
-                j += 1
-                chems.moveToRight(shift: 1)
-            }
-        }
-        result.appendLast(value: chem)
-    }
-    return result
+    return (amountOfReplacedProduced: 0, ChemicalSet())
 }
 
 /*
@@ -131,9 +110,8 @@ func combineSameChemicals(chemicals: ChemicalList) -> ChemicalList {
  7 A, 1 E => 1 FUEL
  */
 
-func expandReactions(reactions: ReactionList, lefts: ChemicalList)
-    -> (fuelReaction: Reaction, leftovers: ChemicalList) {
-    // find fuel
+func expandReactions(reactions: ReactionList, lefts: ChemicalSet, fuelAmount: Int)
+	-> (fuelReaction: Reaction, leftovers: ChemicalSet) {
     var fuelIndex = 0
     for reaction in reactions {
         if reaction.output.name == "FUEL" {
@@ -142,100 +120,85 @@ func expandReactions(reactions: ReactionList, lefts: ChemicalList)
         fuelIndex += 1
     }
     var result = reactions[fuelIndex]
+	var set: ChemicalSet = ChemicalSet()
+	while !result.input.isEmpty {
+		if let chem = result.input.first {
+			let newAmount = chem.amount * fuelAmount
+			set.insert(Chemical(name: chem.name, amount: newAmount))
+			result.input.removeFirst()
+		}
+	}
+	result.input = set
     var leftovers = lefts
     var usedLeftovers = false
-
     while !hasOnlyInputChem(inputChem: "ORE", reaction: result) {
-        var i = 0
-        while i < result.input.count {
-            //print("input: ", chemicalListToString(result.input))
-            //print("leftovers: ", chemicalListToString(leftovers))
+		while let rpChem = result.input.first(where: { $0.name != "ORE" }) {
+			var replacedChem = rpChem
+			result.input.remove(rpChem)
+			// check if can be satisfied by leftovers
+			if let leftover = leftovers.first(where: { $0.name == replacedChem.name }) {
+				if leftover.amount > replacedChem.amount {
+					leftovers.remove(leftover)
+					leftovers.insert(Chemical(name: leftover.name, amount: leftover.amount - replacedChem.amount))
+					usedLeftovers = true
+				} else if leftover.amount == replacedChem.amount {
+					leftovers.remove(leftover)
+					usedLeftovers = true
+				} else {
+					replacedChem.amount -= leftover.amount
+					leftovers.remove(leftover)
+					// just reduced amount, not replaced completely by leftover, so continue replacing
+					// usedLeftovers stays false
+				}
+			}
 
-            result.input.actualToFirst()
-            if result.input.actual!.value!.name != "ORE" {
-                var replacedChem = result.input.actual!.value!
-                result.input.removeActual()
-                // check if can be satisfied by leftovers
-
-                var j = 0
-                while j < leftovers.count {
-                    if leftovers[j].name == replacedChem.name {
-                        if leftovers[j].amount > replacedChem.amount {
-                            leftovers[j].amount -= replacedChem.amount
-                            usedLeftovers = true
-                        } else if leftovers[j].amount == replacedChem.amount {
-                            leftovers.remove(at: j)
-                            usedLeftovers = true
-                        } else {
-                            replacedChem.amount -= leftovers[j].amount
-                            leftovers.remove(at: j)
-                            // just reduced amount, not replaced completely by leftover, so continue replacing
-                            // usedLeftovers stays false
-                        }
-                        break
-                    }
-                    j += 1
-                }
-
-                if !usedLeftovers {
-                    let replacements = replacementFor(chemical: replacedChem, reactions: reactions)
-                    let plus = replacedChem.amount % replacements.amountOfReplacedProduced != 0 ? 1 : 0
-                    for replacement in replacements.1 {
-                        let newAmount = ((replacedChem.amount / replacements.amountOfReplacedProduced) + plus ) * replacement.amount
-                        result.input.append(Chemical(name: replacement.name, amount: newAmount))
-                    }
-                    if plus == 1 {
-                        let leftoverAmount =
-                            ((replacedChem.amount / replacements.amountOfReplacedProduced) + plus ) * replacements.amountOfReplacedProduced - replacedChem.amount
-                        leftovers.append(Chemical(name: replacedChem.name, amount: leftoverAmount))
-                    }
-                }
-
-                usedLeftovers = false
-                i = 0
-            } else {
-                i += 1
-            }
-            //print("before combine")
-            //print("input: ", chemicalListToString(result.input))
-            //print("leftovers: ", chemicalListToString(leftovers))
-            result.input = combineSameChemicals(chemicals: result.input)
-            leftovers = combineSameChemicals(chemicals: leftovers)
-
-            //print("")
+			if !usedLeftovers {
+				let replacements = replacementFor(chemical: replacedChem, reactions: reactions)
+				let plus = replacedChem.amount % replacements.amountOfReplacedProduced != 0 ? 1 : 0
+				var replacementChemicals = replacements.1
+				while !replacementChemicals.isEmpty {
+					if let replacement = replacementChemicals.first {
+						let newAmount = ((replacedChem.amount / replacements.amountOfReplacedProduced) + plus ) * replacement.amount
+						insertToSet(chemical: Chemical(name: replacement.name, amount: newAmount), set: &result.input)
+						replacementChemicals.removeFirst()
+					}
+				}
+				if plus == 1 {
+					let leftoverAmount =
+						((replacedChem.amount / replacements.amountOfReplacedProduced) + plus ) * replacements.amountOfReplacedProduced - replacedChem.amount
+					insertToSet(chemical: Chemical(name: replacedChem.name, amount: leftoverAmount), set: &leftovers)
+				}
+			}
+			usedLeftovers = false
         }
     }
-    return (fuelReaction: result, leftovers: leftovers)
+	return (fuelReaction: result, leftovers: leftovers)
+}
+
+func produceFuel(reactions: ReactionList, ore: Int) -> Int {
+    let leftovers: ChemicalSet = ChemicalSet()
+	var upperFuelAmount = 1000000000
+	var lowerFuelAmount = 0
+	var fuelAmount = ((upperFuelAmount - lowerFuelAmount) / 2) + lowerFuelAmount
+	while true {
+		let fuel = expandReactions(reactions: reactions, lefts: leftovers, fuelAmount: fuelAmount)
+		if let neededOre = fuel.fuelReaction.input.first?.amount {
+			if neededOre < ore {
+				lowerFuelAmount = fuelAmount
+			} else if neededOre > ore {
+				upperFuelAmount = fuelAmount
+			}
+			fuelAmount = ((upperFuelAmount - lowerFuelAmount) / 2) + lowerFuelAmount
+			if fuelAmount == upperFuelAmount || fuelAmount == lowerFuelAmount {
+				break
+			}
+		}
+	}
+    return fuelAmount
 }
 
 let input = readLinesRemoveEmpty(str: inputString)
-//print(input)
 let reactions = parseInput(input: input)
-//print(expandReactions(reactions: reactions))
-print(expandReactions(reactions: reactions, lefts: []).fuelReaction.input.reduce(0, {sum, chem in
-    return sum + chem.amount
-}))
-
-func produceFuel(reactions: [Reaction]) -> Int {
-
-    var hashes: Set<String> = []
-    var leftovers: [Chemical] = []
-    var counter = 0
-    while true {
-        let oneFuel = expandReactions(reactions: reactions, lefts: leftovers)
-        leftovers = oneFuel.leftovers
-        counter += 1
-        let hash = chemicalListToString(leftovers)
-        print(counter)
-        if hashes.contains(hash) {
-            return counter
-        } else {
-            hashes.insert(hash)
-        }
-    }
-
-    return 0
-}
-
-print(produceFuel(reactions: reactions))
-*/
+let result = expandReactions(reactions: reactions, lefts: ChemicalSet(), fuelAmount: 1)
+print("Part 1: ", result.fuelReaction.input.first?.amount ?? -1)
+print("Part 2: ", produceFuel(reactions: reactions, ore: 1000000000000))
